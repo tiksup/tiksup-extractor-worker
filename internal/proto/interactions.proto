@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package interactions;
+
+option go_package = "github.com/tiksup/tiksup-extractor-worker/internal/proto";
+
+service InteractionsService { 
+    rpc TriggerEvent (EventRequest) returns (EventResponse);
+}
+
+message InteractionRequest {
+    string event_name = 1;
+}
+
+message InteractionResponse {
+    bool received = 1;
+}
