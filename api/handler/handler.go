@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/tiksup/tiksup-extractor-worker/internal/database"
 	pb "github.com/tiksup/tiksup-extractor-worker/internal/proto"
@@ -26,11 +26,12 @@ func (s *Server) TriggerEvent(ctx context.Context, req *pb.EventRequest) (*pb.Ev
 		Received: true,
 	}
 
-	fmt.Println(req.String())
-	err := rdb.GetMessageQueue(req.UserId)
+	_, err := rdb.GetMessageQueue(req.UserId)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("Data received")
 
 	return response, nil
 }

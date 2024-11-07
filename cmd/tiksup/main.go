@@ -38,7 +38,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterEventTriggerServiceServer(s, &handler.Server{})
 
-	log.Printf("Server listen on port %s", PORT)
+	log.Printf("\033[32mSERVER LISTEN ON PORT %s\033[0m", PORT)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v\n", err)
 	}

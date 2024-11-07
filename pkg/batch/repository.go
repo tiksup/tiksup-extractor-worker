@@ -13,24 +13,24 @@ type RedisRepository struct {
 	CTX      context.Context
 }
 
-func (client *RedisRepository) GetMessageQueue(userID string) error {
+func (client *RedisRepository) GetMessageQueue(userID string) ([]UserInfo, error) {
 	rdb := client.Database
 	ctx := client.CTX
 
 	key := fmt.Sprintf("user:%s:documents", userID)
 	vals, err := rdb.LRange(ctx, key, 0, -1).Result()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var documents []KafkaData
+	documents := []UserInfo{}
 	for _, val := range vals {
-		var doc KafkaData
+		var doc UserInfo
 		if err := json.Unmarshal([]byte(val), &doc); err != nil {
-			return err
+			return nil, err
 		}
 		documents = append(documents, doc)
 	}
 
-	return nil
+	return documents, nil
 }

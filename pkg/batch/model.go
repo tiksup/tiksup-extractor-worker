@@ -19,20 +19,40 @@
 
 package batch
 
-type KafkaData struct {
-	UserID      string      `bson:"user_id" json:"user_id"`
-	MovieID     string      `bson:"movie_id" json:"movie_id"`
-	Preferences Preferences `bson:"preferences" json:"preferences"`
-	Next        bool        `bson:"next" json:"next"`
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
+/**
+* Data model extracted from kafka
+ */
+type UserInfo struct {
+	// UserID         string       `bson:"user_id" json:"user_id"`
+	MovieID        string       `json:"movie_id"`
+	WatchingTime   float64      `json:"watching_time"`
+	WatchingRepeat int          `json:"watching_repeat"`
+	Interactions   Interactions `json:"interactions"`
+	Next           bool         `json:"next"`
 }
 
-type Preferences struct {
-	GenreScore       []Score `bson:"genre_score" json:"genre_score"`
-	ProtagonistScore []Score `bson:"protagonist_score" json:"protagonist_score"`
-	DirectorScore    []Score `bson:"director_score" json:"director_score"`
+type Interactions struct {
+	Genre       []string `json:"genre"`
+	Protagonist string   `json:"protagonist"`
+	Director    string   `json:"director"`
 }
 
-type Score struct {
-	Name  string  `bson:"name" json:"name"`
-	Score float64 `bson:"score" json:"score"`
+/**
+* Data model sent to data processor with spark
+ */
+type PreprocessedData struct {
+	User   string     `json:"user"`
+	Data   []UserInfo `json:"data"`
+	Movies Movie      `json:"movies"`
+}
+
+type Movie struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	URL         string             `bson:"url" json:"url"`
+	Title       string             `bson:"title" json:"title"`
+	Genre       []string           `bson:"genre" json:"genre"`
+	Protagonist string             `bson:"protagonist" json:"protagonist"`
+	Director    string             `bson:"director" json:"director"`
 }
