@@ -19,7 +19,9 @@
 
 package batch
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"github.com/tiksup/tiksup-extractor-worker/pkg/movie"
+)
 
 /**
 * Data model extracted from kafka
@@ -43,16 +45,7 @@ type Interactions struct {
 * Data model sent to data processor with spark
  */
 type PreprocessedData struct {
-	User   string     `json:"user"`
-	Data   []UserInfo `json:"data"`
-	Movies Movie      `json:"movies"`
-}
-
-type Movie struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	URL         string             `bson:"url" json:"url"`
-	Title       string             `bson:"title" json:"title"`
-	Genre       []string           `bson:"genre" json:"genre"`
-	Protagonist string             `bson:"protagonist" json:"protagonist"`
-	Director    string             `bson:"director" json:"director"`
+	User   string        `json:"user"`
+	Data   []UserInfo    `json:"data"`
+	Movies []movie.Movie `json:"movies"`
 }
