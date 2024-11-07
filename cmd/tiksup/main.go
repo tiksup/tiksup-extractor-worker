@@ -18,17 +18,28 @@ func init() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Println("\033[31mNot .env file found. Using system variables\033[0m")
 	}
+
+	if err := database.GetRedisConnection(context.Background()); err != nil {
+		log.Fatalf("Error trying connect to redis: %v\n", err)
+	}
+
+	if err := database.GetMongoConnection(context.TODO()); err != nil {
+		log.Fatalf("Error trying connect to mongo: %v\n", err)
+	}
 }
 
 func main() {
 	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		log.Fatal("PORT not set in environment variables")
+	}
+
 	addr := fmt.Sprintf(":%s", PORT)
 
-	err := database.GetRedisConnection(context.Background())
-	if err != nil {
-		log.Fatal("Error trying connect to redis")
-	}
-	defer database.RedisClient.Close()
+	defer func() {
+		defer database.RedisClient.Close()
+		defer database.MongoClient.Disconnect(context.TODO())
+	}()
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
