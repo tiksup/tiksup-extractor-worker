@@ -29,8 +29,8 @@ import (
 type UserInfo struct {
 	// UserID         string       `bson:"user_id" json:"user_id"`
 	MovieID        string       `json:"movie_id"`
-	WatchingTime   float64      `json:"watching_time"`
-	WatchingRepeat int          `json:"watching_repeat"`
+	WatchingTime   float32      `json:"watching_time"`
+	WatchingRepeat int32        `json:"watching_repeat"`
 	Interactions   Interactions `json:"interactions"`
 	Next           bool         `json:"next"`
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/tiksup/tiksup-extractor-worker/api/handler"
+	"github.com/tiksup/tiksup-extractor-worker/internal/config"
 	"github.com/tiksup/tiksup-extractor-worker/internal/database"
 	pb "github.com/tiksup/tiksup-extractor-worker/internal/proto"
 	"google.golang.org/grpc"
@@ -30,15 +31,19 @@ func init() {
 
 func main() {
 	PORT := os.Getenv("PORT")
+	GRPC_SERVER := os.Getenv("GRPC_SERVER")
 	if PORT == "" {
 		log.Fatal("PORT not set in environment variables")
+	}
+	if GRPC_SERVER == "" {
+		log.Fatal("GRPC_SERVER not set in environment variables")
 	}
 
 	addr := fmt.Sprintf(":%s", PORT)
 
 	defer func() {
-		defer database.RedisClient.Close()
-		defer database.MongoClient.Disconnect(context.TODO())
+		database.RedisClient.Close()
+		database.MongoClient.Disconnect(context.TODO())
 	}()
 
 	lis, err := net.Listen("tcp", addr)
@@ -46,8 +51,16 @@ func main() {
 		log.Fatalf("Failed to listen: %v\n", err)
 	}
 
+	client, err := config.CreateInteractionClient(GRPC_SERVER)
+	if err != nil {
+		log.Fatalf("Failed to listen: %v\n", err)
+	}
+	defer client.Conn.Close()
+
 	s := grpc.NewServer()
-	pb.RegisterEventTriggerServiceServer(s, &handler.Server{})
+	pb.RegisterEventTriggerServiceServer(s, &handler.Server{
+		Client: client.Client,
+	})
 
 	log.Printf("\033[32mSERVER LISTEN ON PORT %s\033[0m", PORT)
 	if err := s.Serve(lis); err != nil {

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -14,6 +13,7 @@ import (
 
 type Server struct {
 	pb.UnimplementedEventTriggerServiceServer
+	Client pb.InteractionsServiceClient
 }
 
 func (s *Server) TriggerEvent(ctx context.Context, req *pb.EventRequest) (*pb.EventResponse, error) {
@@ -24,7 +24,7 @@ func (s *Server) TriggerEvent(ctx context.Context, req *pb.EventRequest) (*pb.Ev
 		return &pb.EventResponse{Received: false}, nil
 	}
 
-	data, err := rdb.GetMessageQueue(req.UserId)
+	queue, err := rdb.GetMessageQueue(req.UserId)
 	if err != nil {
 		log.Printf("Error getting message queue: %v\n", err)
 		return nil, err
@@ -36,16 +36,63 @@ func (s *Server) TriggerEvent(ctx context.Context, req *pb.EventRequest) (*pb.Ev
 		return nil, err
 	}
 
-	data2 := batch.PreprocessedData{
+	data := batch.PreprocessedData{
 		User:   req.UserId,
-		Data:   data,
+		Data:   queue,
 		Movies: movies,
 	}
 
-	d, _ := json.MarshalIndent(data2, "", "    ")
-	fmt.Printf("%s\n", d)
+	err = s.SendInteracctions(ctx, data)
+	if err != nil {
+		log.Printf("Error getting movies: %v", err)
+		return nil, err
+	}
 
 	log.Println("Data received")
-
 	return &pb.EventResponse{Received: true}, nil
+}
+
+func (s *Server) SendInteracctions(ctx context.Context, data batch.PreprocessedData) error {
+	userInfo := make([]*pb.UserInfoRequest, len(data.Data))
+	movies := make([]*pb.MoviesRequest, len(data.Movies))
+
+	for i, d := range data.Data {
+		userInfo[i] = &pb.UserInfoRequest{
+			MovieId:        d.MovieID,
+			WatchingTime:   d.WatchingTime,
+			WatchingRepeat: d.WatchingRepeat,
+			Interactions: &pb.InteractionsRequest{
+				Genre:       d.Interactions.Genre,
+				Protagonist: d.Interactions.Protagonist,
+				Director:    d.Interactions.Director,
+			},
+		}
+	}
+
+	for i, d := range data.Movies {
+		movies[i] = &pb.MoviesRequest{
+			Id:          d.ID.Hex(),
+			Url:         d.URL,
+			Title:       d.Title,
+			Genre:       d.Genre,
+			Protagonist: d.Protagonist,
+			Director:    d.Director,
+		}
+	}
+
+	request := &pb.PreprocessedDataRequest{
+		User:   data.User,
+		Data:   userInfo,
+		Movies: movies,
+	}
+
+	res, err := s.Client.ProcessData(ctx, request)
+	if err != nil {
+		return fmt.Errorf("Error to sending request: %w", err)
+	}
+	if !res.Success {
+		return fmt.Errorf("Wrong data")
+	}
+
+	return nil
 }
