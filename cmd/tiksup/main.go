@@ -31,15 +31,17 @@ func init() {
 
 func main() {
 	PORT := os.Getenv("PORT")
-	GRPC_SERVER := os.Getenv("GRPC_SERVER")
+	TARGET_GRPC_SERVER_HOST := os.Getenv("TARGET_GRPC_SERVER_HOST")
+	TARGET_GRPC_SERVER_PORT := os.Getenv("TARGET_GRPC_SERVER_PORT")
 	if PORT == "" {
 		log.Fatal("PORT not set in environment variables")
 	}
-	if GRPC_SERVER == "" {
-		log.Fatal("GRPC_SERVER not set in environment variables")
+	if TARGET_GRPC_SERVER_HOST == "" || TARGET_GRPC_SERVER_PORT == "" {
+		log.Fatal("TARGET_GRPC_SERVER not set in environment variables")
 	}
 
 	addr := fmt.Sprintf(":%s", PORT)
+	grpcTargetServer := fmt.Sprintf("%s:%s", TARGET_GRPC_SERVER_HOST, TARGET_GRPC_SERVER_PORT)
 
 	defer func() {
 		database.RedisClient.Close()
@@ -51,7 +53,7 @@ func main() {
 		log.Fatalf("Failed to listen: %v\n", err)
 	}
 
-	client, err := config.CreateInteractionClient(GRPC_SERVER)
+	client, err := config.CreateInteractionClient(grpcTargetServer)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v\n", err)
 	}
